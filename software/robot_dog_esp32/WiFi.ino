@@ -12,18 +12,18 @@ void initWiFi() {
 
 void WiFiEvent(WiFiEvent_t event){
     switch(event) {
-        case SYSTEM_EVENT_AP_START:
+        case ARDUINO_EVENT_WIFI_AP_START:
             WiFi.softAPsetHostname(wifiSsid[WiFiMode]);
             WiFiIP = WiFi.softAPIP();
             Serial.print("WiFi AP IP: ");
             Serial.println(WiFiIP);
             break;
-        case SYSTEM_EVENT_AP_STOP:
+        case ARDUINO_EVENT_WIFI_AP_STOP:
             break;
-        case SYSTEM_EVENT_STA_START:
+        case ARDUINO_EVENT_WIFI_STA_START:
             WiFi.setHostname(wifiSsid[WiFiMode]);
             break;
-        case SYSTEM_EVENT_STA_GOT_IP:
+        case ARDUINO_EVENT_WIFI_STA_GOT_IP:
             WiFiIP = WiFi.localIP();
             Serial.print("WiFi STA IP: ");
             Serial.println(WiFiIP);
