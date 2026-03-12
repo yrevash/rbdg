@@ -34,7 +34,7 @@ leg legs[LEG_NUM] = {
     {LEG_ANGLE_ALPHA_MAX, LEG_ANGLE_BETA_MAX, LEG_ANGLE_GAMMA_MAX},
     {
       {M_PI_2, M_PI_2, M_PI_2},  // hardware middle
-      { 25, 26, 27},             // 3 servo pins
+      {  1,  2,  3},             // 3 servo channels (PCA9685)
       {  0,  0,  0},             // servo middle trim
       {  2,  1,  1}              // gear ratio, first and last one is 16 groves on servo and 24 groves on leg
     },
@@ -54,7 +54,7 @@ leg legs[LEG_NUM] = {
     {LEG_ANGLE_ALPHA_MAX, LEG_ANGLE_BETA_MAX, LEG_ANGLE_GAMMA_MAX},
     {
       {M_PI_2, M_PI_2, M_PI_2},
-      { 16, 18, 17},
+      {  9, 10, 11},
       {  0,  0,  0},
       {  2,  1,  1}
     },
@@ -74,7 +74,7 @@ leg legs[LEG_NUM] = {
     {LEG_ANGLE_ALPHA_MAX, LEG_ANGLE_BETA_MAX, LEG_ANGLE_GAMMA_MAX},
     {
       {M_PI_2, M_PI_2, M_PI_2},
-      { 13, 12, 14},
+      {  5,  6,  7},
       {  0,  0,  0},
       {  2,  1,  1}
     },
@@ -94,7 +94,7 @@ leg legs[LEG_NUM] = {
     {LEG_ANGLE_ALPHA_MAX, LEG_ANGLE_BETA_MAX, LEG_ANGLE_GAMMA_MAX},
     {
       {M_PI_2, M_PI_2, M_PI_2},
-      {  4,  2, 15},
+      { 13, 14, 15},
       {  0,  0,  0},
       {  2,  1,  1}
     },

@@ -79,10 +79,10 @@ Entry point: `robot_dog_esp32.ino` — sets up FreeRTOS tasks on both cores.
 
 | Leg | Alpha | Beta | Gamma |
 |-----|-------|------|-------|
-| LF (Left Front) | 25 | 26 | 27 |
-| RF (Right Front) | 16 | 18 | 17 |
-| LH (Left Hind) | 13 | 12 | 14 |
-| RH (Right Hind) | 4 | 2 | 15 |
+| LF (Left Front) | 1 | 2 | 3 |
+| RF (Right Front) | 9 | 10 | 11 |
+| LH (Left Hind) | 5 | 6 | 7 |
+| RH (Right Hind) | 13 | 14 | 15 |
 
 ### Communication Protocols
 
