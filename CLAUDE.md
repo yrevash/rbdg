@@ -47,7 +47,7 @@ The build produces `software/robot_dog_esp32/web/index.html.gz.h` (precompiled g
 
 ### Dual-Core Task Split
 
-- **Core 1 (real-time loop, 250 Hz / 4ms):** failsafe check → gait update → inverse kinematics → servo PWM output
+- **Core 1 (real-time loop, ~166 Hz / 6ms):** failsafe check → gait update → inverse kinematics → servo PWM output (I2C mutex protected)
 - **Core 0 (service loop, ~10 Hz):** IMU read, WiFi management, power monitoring, CLI processing, subscription updates
 
 Entry point: `robot_dog_esp32.ino` — sets up FreeRTOS tasks on both cores.
@@ -62,7 +62,7 @@ Entry point: `robot_dog_esp32.ino` — sets up FreeRTOS tasks on both cores.
 | Balance | `libs/balance/` | Center-of-mass calculation (incomplete) |
 | Body State | `libs/HAL_body/` | Aggregates body position/rotation state |
 | Transition | `libs/transition/` | Smooth leg movement interpolation |
-| Hardware Abstraction | `HAL.ino`, `HAL_ESP32PWM.ino` | IK integration + servo PWM via ISR |
+| Hardware Abstraction | `HAL.ino`, `HAL_PCA9685.ino` | IK integration + servo PWM via PCA9685 I2C |
 | CLI | `cli.ino`, `cliGet.ino`, `cliSet.ino` | Serial command interface (`get`/`set`/`run`/`sbs`) |
 | WebSocket/HTTP | `webServer.ino`, `packagesProcess.ino` | AsyncWebServer, binary protocol over WS |
 | Subscriptions | `subscription.ino` | Real-time telemetry streaming (FAST=5ms, SLOW=100ms) |
@@ -75,14 +75,48 @@ Entry point: `robot_dog_esp32.ino` — sets up FreeRTOS tasks on both cores.
 - `config_small.h` — robot-specific: leg dimensions (L2=51.9mm, L3=50mm), servo GPIO pin assignments, servo PWM calibration table, gear ratios
 - `def.h` — struct/type definitions
 
-### Servo Pin Mapping (GPIO)
+### Servo Channel Mapping (PCA9685 at 50Hz)
+
+**IMPORTANT: Servos use 50Hz PWM frequency (not 330Hz). MG90S servos do not respond at 330Hz.**
 
 | Leg | Alpha | Beta | Gamma |
 |-----|-------|------|-------|
-| LF (Left Front) | 1 | 2 | 3 |
-| RF (Right Front) | 9 | 10 | 11 |
-| LH (Left Hind) | 5 | 6 | 7 |
-| RH (Right Hind) | 13 | 14 | 15 |
+| LF (Left Front) | CH 0 | CH 1 | CH 2 |
+| LH (Left Back) | CH 3 | CH 4 | CH 5 |
+| RF (Right Front) | CH 6 | CH 7 | CH 8 |
+| RH (Right Back) | CH 9 | CH 10 | CH 11 |
+
+PCA9685 pulse mapping at 50Hz: 150 (0°) to 600 (180°).
+
+### Calibrated Servo Angle Ranges
+
+```
+Left Front:
+  Alpha: 0-90°   (0=Outward, 90=Inward, mid~65°)
+  Beta:  0-115°  (0=Front, 115=Back)
+  Gamma: 0-135°  (0=Back, 135=Front)
+
+Left Back:
+  Alpha: 0-130°  (0=Inward, 130=Outward, mid~65°)
+  Beta:  0-135°  (0=Front, 135=Back)
+  Gamma: 0-135°  (0=Back, 135=Front)
+
+Right Front:
+  Alpha: 10-135° (135=Outward, 10=Inward, mid~50°) — inverted vs LF
+  Beta:  0-135°  (135=Front, 0=Back) — inverted vs LF
+  Gamma: 0-135°  (0=Front, 135=Back)
+
+Right Back:
+  Alpha: 0-90°   (0=Outward, 90=Inward, mid~50°)
+  Beta:  0-135°  (135=Front, 0=Back) — inverted vs LF
+  Gamma: 0-135°  (0=Front, 135=Back)
+```
+
+Right-side Beta joints are inverted compared to left-side Beta joints.
+
+### I2C Dual-Core Mutex
+
+PCA9685 servo writes happen on Core 1, while IMU/power sensor reads happen on Core 0. Both use I2C (Wire), which is NOT thread-safe. A FreeRTOS mutex (`i2cMutex`) in `robot_dog_esp32.ino` protects all I2C access across cores.
 
 ### Communication Protocols
 
@@ -97,3 +131,31 @@ Addresses 0-1: version/revision. Addresses 2-13: per-leg trim values (alpha/beta
 ## Calibration
 
 Servo calibration requires physical measurement — see `tools/` directory and README.md for the procedure. Trim values are adjusted via CLI (`set <leg>_HAL_trim_<joint> <degrees>`) and persisted to EEPROM.
+
+### Test Scripts (tools/)
+
+- `tools/i2c_scanner/i2c_scanner.ino` — Scans I2C bus, identifies PCA9685 (0x40), MPU9250 (0x68), INA219
+- `tools/pca9685_test/pca9685_test.ino` — Interactive servo calibration tool (single channel, angle/pulse commands)
+- `tools/leg_test/test_LF.ino` — Left Front leg test with calibrated limits
+- `tools/leg_test/test_LB.ino` — Left Back leg test
+- `tools/leg_test/test_RF.ino` — Right Front leg test
+- `tools/leg_test/test_RB.ino` — Right Back leg test
+- `tools/leg_test/test_all_legs.ino` — All 4 legs combined test
+
+## Power Supply
+
+- **Battery**: 3S LiPo 11.1V 2200mAh 30C
+- **Servo power**: XH-M401 (XL4016E1) 8A buck converter → 6V → PCA9685 V+ screw terminal
+- **Logic power**: Mini360 buck converter → 5.5V → ESP32 VIN + PCA9685 VCC + sensors
+- **Important**: LM2596 (3A) is insufficient for 12 servos under load. XH-M401 (8A) recommended.
+- MG90S servo stall current: ~700mA each, 12 servos = 8.4A worst case
+
+## Hardware Wiring
+
+```
+ESP32 GPIO 21 (SDA) → PCA9685 SDA → MPU9250 SDA → INA219 SDA
+ESP32 GPIO 22 (SCL) → PCA9685 SCL → MPU9250 SCL → INA219 SCL
+5.5V (Mini360)      → ESP32 VIN, PCA9685 VCC, sensor VCC
+6V (XH-M401)        → PCA9685 V+ screw terminal (servo power)
+All GNDs tied together
+```

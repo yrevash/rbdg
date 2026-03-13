@@ -3,7 +3,7 @@
  */
 
 //Cores loop time
-#define LOOP_TIME 4000   // microseconds (10^-6 seconds)
+#define LOOP_TIME 6000   // microseconds (PCA9685 I2C needs more time than direct GPIO PWM)
 #define SERVICE_LOOP_TIME 100000
 #define SERVICE_FAST_LOOP_TIME 5000
 
@@ -46,7 +46,7 @@
 // Servo config (set as max as possible for init, but use servoProfile)
 #define SERVO_MIN 600
 #define SERVO_MAX 2400
-#define SERVO_FREQ 330
+#define SERVO_FREQ 50  // MG90S servos work at 50Hz (not 330Hz)
 
 //Fail safe
 #define FS_WS_THR 20  // 1 second = FS_WS_THR*LOOP_TIME

@@ -26,9 +26,9 @@ void setupPowerSensor()
       Serial.println("Failed to find INA219 chip");
     }
 
-    ina219.setADCMode(BIT_MODE_9);  // just to make it fast
-    ina219.setPGain(PG_320);
-    ina219.setBusRange(BRNG_16);
+    ina219.setADCMode(INA219_BIT_MODE_9);  // just to make it fast
+    ina219.setPGain(INA219_PG_320);
+    ina219.setBusRange(INA219_BRNG_16);
   #endif
 }
 

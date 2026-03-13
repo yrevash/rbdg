@@ -51,7 +51,7 @@
 #endif
 
 float IMU_DATA[3] = {0, 0, 0};
-MPU9250_WE IMU;
+MPU9250_WE IMU(IMU_ADDRESS);
 
 // run commands on diferent cores (FAST for main, SLOW for services)
 bool runCommandFASTCore = false;
@@ -153,18 +153,32 @@ bool subscriptionBinary = false;
 bool mainLoopReady = false;
 bool serviceLoopReady = false;
 
+// I2C mutex - PCA9685 on Core 1 and sensors on Core 0 both use I2C
+SemaphoreHandle_t i2cMutex;
+
 
 void setup()
 {
   Serial.begin(SERIAL_BAUD);
   delay(100);
 
+  Serial.println();
+  Serial.println("=== ESP32 Robot Dog ===");
+  Serial.println("Boot start...");
+  Serial.println();
+
+  i2cMutex = xSemaphoreCreateMutex();
+
+  Wire.begin();
+  Wire.setClock(400000);
+  Serial.println("I2C ready (SDA=21, SCL=22, 400kHz)");
+
   initSettings();
   delay(100);
-  
+
   initHAL();
   delay(100);
-  
+
   initGait();
   delay(100);
   
@@ -193,7 +207,10 @@ void loop()
     updateFailsafe();
     updateGait();
     updateHAL();
-    doHAL();
+    if (xSemaphoreTake(i2cMutex, pdMS_TO_TICKS(2)) == pdTRUE) {
+      doHAL();
+      xSemaphoreGive(i2cMutex);
+    }
 
     FS_WS_count++;
 
@@ -213,8 +230,6 @@ void servicesSetup() {
   cliSerial = &Serial;
   initCLI();
   initSubscription();
-  Wire.begin();
-  Wire.setClock(400000);
   delay(100);
 
   initIMU();
@@ -241,8 +256,11 @@ void servicesLoop(void * pvParameters) {
     if (serviceCurrentTime - serviceFastPreviousTime >= SERVICE_FAST_LOOP_TIME) {
       serviceFastPreviousTime = serviceCurrentTime;
 
-      updateIMU();
-      
+      if (xSemaphoreTake(i2cMutex, pdMS_TO_TICKS(2)) == pdTRUE) {
+        updateIMU();
+        xSemaphoreGive(i2cMutex);
+      }
+
       runFASTCommand();
       doFASTSubscription();
 
@@ -257,7 +275,10 @@ void servicesLoop(void * pvParameters) {
       servicePreviousTime = serviceCurrentTime;
 
       updateWiFi();
-      updatePower();
+      if (xSemaphoreTake(i2cMutex, pdMS_TO_TICKS(2)) == pdTRUE) {
+        updatePower();
+        xSemaphoreGive(i2cMutex);
+      }
       runSLOWCommand();
       updateCLI();
       doSLOWSubscription();

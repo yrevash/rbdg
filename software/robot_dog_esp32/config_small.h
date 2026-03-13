@@ -24,7 +24,10 @@
 point balanceOffset = {0, 0, 0};
 
 leg legs[LEG_NUM] = {
-  // LEFT FRONT
+  // LEFT FRONT (channels 0,1,2)
+  // Alpha: 0-90° (0=Outward, 90=Inward, mid~65°)
+  // Beta:  0-115° (0=Front, 115=Back)
+  // Gamma: 0-135° (0=Back, 135=Front)
   {
     {LEGLF, "LF"},
     { -LEG_BODY_X,  LEG_BODY_Y_F,   LEG_BODY_Z},
@@ -34,9 +37,9 @@ leg legs[LEG_NUM] = {
     {LEG_ANGLE_ALPHA_MAX, LEG_ANGLE_BETA_MAX, LEG_ANGLE_GAMMA_MAX},
     {
       {M_PI_2, M_PI_2, M_PI_2},  // hardware middle
-      {  1,  2,  3},             // 3 servo channels (PCA9685)
+      {  0,  1,  2},             // PCA9685 channels
       {  0,  0,  0},             // servo middle trim
-      {  2,  1,  1}              // gear ratio, first and last one is 16 groves on servo and 24 groves on leg
+      {  2,  1,  1}              // gear ratio
     },
     {    -LEG_BODY_X,   LEG_BODY_Y_F,      LEG_BODY_Z},
     {   -LEG_POINT_X,  LEG_POINT_Y_F,    -LEG_POINT_Z},
@@ -44,7 +47,10 @@ leg legs[LEG_NUM] = {
     {true, true, false, false, true, true},
     {true, 0, 0}
   },
-  // RIGHT FRONT
+  // RIGHT FRONT (channels 6,7,8)
+  // Alpha: 10-135° (135=Outward, 10=Inward, mid~50°) — inverted vs LF
+  // Beta:  0-135° (135=Front, 0=Back) — inverted vs LF
+  // Gamma: 0-135° (0=Front, 135=Back)
   {
     {LEGRF, "RF"},
     { LEG_BODY_X,  LEG_BODY_Y_F,   LEG_BODY_Z},
@@ -54,7 +60,7 @@ leg legs[LEG_NUM] = {
     {LEG_ANGLE_ALPHA_MAX, LEG_ANGLE_BETA_MAX, LEG_ANGLE_GAMMA_MAX},
     {
       {M_PI_2, M_PI_2, M_PI_2},
-      {  9, 10, 11},
+      {  6,  7,  8},             // PCA9685 channels
       {  0,  0,  0},
       {  2,  1,  1}
     },
@@ -64,7 +70,10 @@ leg legs[LEG_NUM] = {
     {false, true, false, true, false, false},
     {true, 0, 0}
   },
-  // LEFT HIND
+  // LEFT HIND / LEFT BACK (channels 3,4,5)
+  // Alpha: 0-130° (0=Inward, 130=Outward, mid~65°) — inverted vs LF
+  // Beta:  0-135° (0=Front, 135=Back)
+  // Gamma: 0-135° (0=Back, 135=Front) — same as LF
   {
     {LEGLH, "LH"},
     { -LEG_BODY_X,  -LEG_BODY_Y_H,   LEG_BODY_Z},
@@ -74,7 +83,7 @@ leg legs[LEG_NUM] = {
     {LEG_ANGLE_ALPHA_MAX, LEG_ANGLE_BETA_MAX, LEG_ANGLE_GAMMA_MAX},
     {
       {M_PI_2, M_PI_2, M_PI_2},
-      {  5,  6,  7},
+      {  3,  4,  5},             // PCA9685 channels
       {  0,  0,  0},
       {  2,  1,  1}
     },
@@ -84,7 +93,10 @@ leg legs[LEG_NUM] = {
     {true, true, false, true, true, true},
     {true, 0, 0}
   },
-  // RIGHT HIND
+  // RIGHT HIND / RIGHT BACK (channels 9,10,11)
+  // Alpha: 0-90° (0=Outward, 90=Inward, mid~50°)
+  // Beta:  0-135° (135=Front, 0=Back) — inverted vs LF
+  // Gamma: 0-135° (0=Front, 135=Back)
   {
     {LEGRH, "RH"},
     { LEG_BODY_X,  -LEG_BODY_Y_H,   LEG_BODY_Z},
@@ -94,7 +106,7 @@ leg legs[LEG_NUM] = {
     {LEG_ANGLE_ALPHA_MAX, LEG_ANGLE_BETA_MAX, LEG_ANGLE_GAMMA_MAX},
     {
       {M_PI_2, M_PI_2, M_PI_2},
-      { 13, 14, 15},
+      {  9, 10, 11},             // PCA9685 channels
       {  0,  0,  0},
       {  2,  1,  1}
     },
